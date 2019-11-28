@@ -1,0 +1,16 @@
+import org.apache.commons.codec.binary.Base64
+
+ File originalFile = new File("D:/package.zip");
+ File encodedZipFile = new File("D:/ZipFileBase64.txt")
+        String encodedBase64 = null;
+        try {
+            FileInputStream fileInputStreamReader = new FileInputStream(originalFile);
+            byte[] bytes = new byte[(int)originalFile.length()];
+            fileInputStreamReader.read(bytes);
+            encodedBase64 = new String(Base64.encodeBase64(bytes));
+            file = new File("D:/report.txt").write(encodedBase64, "UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }

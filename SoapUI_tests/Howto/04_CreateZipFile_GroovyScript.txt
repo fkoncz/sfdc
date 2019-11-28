@@ -1,0 +1,28 @@
+import org.apache.commons.codec.binary.Base64
+
+// Step 1: Access element Base64-encoded text content and Base64 decode it
+String tempZipFilename = "D:temp.zip"
+def textBase64 = context.expand(
+  'UEsDBBQACAgIAKsqMUgAAAAAAAAAAAAAAAAlAAAAdW5wYWNrYWdlZC9zZXR0aW5ncy9TZWN1cml0eS5zZXR0aW5nc41VS2/aQBC+8yuQ72FpVEVVZRxZSWiRCCBM1PPGHmCLvevujBP49x0Mro29pOH4PWbn5cG/32dp/w0sKqNH3pfB0OuDjk2i9GbkvazGN9+8+6DnRxAXVtEhAiKmsM82jSNvS5R/FwKNzAe4NjaGQWwycTsc3onhV5EByUSS9IJen3++Bno3dhfGMSCKM5hLREaThUlVrABPcElxrDyFPT8chGm+lbMiA6tiXzSIWg37XFlJXEkwA67JFw2klm0VkrGHJSBxrJIc+sKB1pbUxDtT0EQT2DeZBpHa0+FZ6YIAfdFma18m91OzUTokgiwnDGZmqjJFvugwDZPSKiuyxbktU9Ab2gZ37HES141qDaQyCNYyRejaK7oOYF6Rxww8bAsUanwHW5ldVG38U3DbuGXN7s2MZp+LOY1duOfuI68Gq6pNa7ySKJSvKaw4aW73L2k1C6oE3WRjOfSRfogWc/2USZUGZAu2deCuYzme6x9ALUOFuvULgy5DCXccMt5CqJOwIHPaa4JLr0vQicJN3P2W8Y77jkBFHo0fHy7DOBX/jfOC9RZ8JPlUoJ8gE7Apj/gTIRviq8Gjo9hd5olqO48jGBsbnbaslUabbJuj52iSgKbj3Wm+2cSbnvIiTvKl1BvAJz5JfF/KL6J+9rqkDlRq+FzwYs/1Obnzop/T+EjRirOE9Hh4msYKujx4VRdW5tHwp1E5nNQ15ySvKu3gtQUv8708rugo5h9aHwlftP+igt5fUEsHCDmaItUzAgAA3QYAAFBLAwQUAAgICACrKjFIAAAAAAAAAAAAAAAAFgAAAHVucGFja2FnZWQvcGFja2FnZS54bWxNjssOwiAQRfd8BWEvg88YM6U71ybqByAdtVGgKWjs30v6iM5qzuTkzsXy4578TW2sgy/EXCrBydtQ1f5WiPNpP9uKUjM8GPswN+LZ9rEQ95SaHUAMppHxGlpL0gYHC6U2oFbgKJnKJCM043kwdQ3FYe/Zkbvkl/pI9tXWqUOYLj/HG0dZSCk3iQg9DmnwF4djdb1cS4UwEUMYG2v2BVBLBwhoQeQzngAAAOMAAABQSwECFAAUAAgICACrKjFIOZoi1TMCAADdBgAAJQAAAAAAAAAAAAAAAAAAAAAAdW5wYWNrYWdlZC9zZXR0aW5ncy9TZWN1cml0eS5zZXR0aW5nc1BLAQIUABQACAgIAKsqMUhoQeQzngAAAOMAAAAWAAAAAAAAAAAAAAAAAIYCAAB1bnBhY2thZ2VkL3BhY2thZ2UueG1sUEsFBgAAAAACAAIAlwAAAGgDAAAAAA==' )
+def b64 = new Base64()
+def zipTextBytes = b64.decode(textBase64.getBytes())
+
+// Step 2: Output ZIP raw text into a temporary file
+def zipFile = new java.io.File(tempZipFilename)
+FileOutputStream fos = new java.io.FileOutputStream(zipFile)
+fos.write( zipTextBytes )
+fos.flush()
+fos.close()
+log.info "Temporary ZIP file stored as: ${zipFile.getCanonicalPath()}"
+
+// Step 3: Check if the temporarily created ZIP file is valid
+boolean responseValid
+try {
+  zipFile = new java.util.zip.ZipFile(tempZipFilename)
+  responseValid = true
+  log.info "Number of files in the ZIP file: ${zipFile.size()}"
+} catch (java.util.zip.ZipException e) {
+  responseValid = false
+  log.error "The received response contains a bad ZIP"
+}
+log.info "Web service response is " + (responseValid ? "valid" : "invalid")

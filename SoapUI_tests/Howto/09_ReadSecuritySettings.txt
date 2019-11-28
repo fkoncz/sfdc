@@ -1,0 +1,14 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
+   <soapenv:Header>
+      <met:SessionHeader>
+            <sessionId>00D1a000000Xwwm!ARMAQORxXSX2LyC2n5FlmFgRRchSJlq.LXJmuQH5Lm2Y58FN8iZ0dQFT2veSgld.oDwQV1h4JLYcezUQgOBADoXakC2w134q</sessionId>
+      </met:SessionHeader>
+   </soapenv:Header>
+   <soapenv:Body>
+      <met:readMetadata>
+         <met:type>SecuritySettings</met:type>
+         <!--Zero or more repetitions:-->
+         <met:fullNames>*</met:fullNames>
+      </met:readMetadata>
+   </soapenv:Body>
+</soapenv:Envelope>
