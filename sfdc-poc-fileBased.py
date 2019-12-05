@@ -156,6 +156,9 @@ zip_ref.extractall()
 zip_ref.close()
 
 def change_session_timeout():
+    '''
+    :return:
+    '''
     xmldoc2 = xml.dom.minidom.parse('./unpackaged//settings/Security.settings')
     xmldata2 = xmldoc2.getElementsByTagName("sessionTimeout")[0]
     xmldata2.firstChild.nodeValue = NewSessionTimeOut
@@ -165,6 +168,9 @@ def change_session_timeout():
     print ("sessionTimeout updated to " + NewSessionTimeOut + " setting locally.")
 
 def change_lockoutInterval():
+    '''
+    :return:
+    '''
     xmldoc = xml.dom.minidom.parse('./unpackaged//settings/Security.settings')
     xmldata = xmldoc.getElementsByTagName("lockoutInterval")[0]
     xmldata.firstChild.nodeValue = NewLockoutInterval

@@ -1,6 +1,3 @@
-import json
-import httplib2
-import urllib3
 import requests
 import collections
 import xml.dom.minidom
@@ -10,7 +7,6 @@ from simple_salesforce import Salesforce
 
 
 sf = Salesforce(username=ADMIN1_USERNAME, password=ADMIN1_PASSWORD, security_token=ADMIN1_TOKEN)
-
 
 def main():
     #brute force login
@@ -45,6 +41,10 @@ def main():
 
 #This is useful in general to manipulate any user's details
 def getUserId(userName):
+    '''
+    :param userName:
+    :return:
+    '''
     userinfo = sf.query("SELECT Id FROM User WHERE username = '"+userName+"'")
     # Userinfo is an ordereddict that contains a list that contains another ordereddict so we need to dig in a bit:
     dict = collections.OrderedDict(userinfo)
@@ -55,6 +55,10 @@ def getUserId(userName):
     return uid
 
 def getUserFullName(userName):
+    '''
+    :param userName:
+    :return:
+    '''
     userinfo = sf.query("SELECT FirstName, LastName FROM User WHERE username = '"+userName+"'")
     dict = collections.OrderedDict(userinfo)
     dictitems = list(dict.values())[2]
@@ -71,24 +75,33 @@ def getUserFullName(userName):
 
 #Creating a user
 def createAndDeactUsers(howMany, userName, Alias, Email, lastName, ProfileId):
+    '''
+    :param howMany:
+    :param userName:
+    :param Alias:
+    :param Email:
+    :param lastName:
+    :param ProfileId:
+    :return:
+    '''
     try:
         while howMany>0:
             actualUsername = userName+str(howMany)+"@hotmail.com"
             actualEmail = Email+str(howMany)+"@hotmail.com"
             actualAlias = Alias+str(howMany)
             actualLastname = lastName+str(howMany)+"Joe"
-            sf.User.create({'userName':actualUsername,
-                            'Alias':actualAlias,
-                            'Email':actualEmail,
-                            'lastName':actualLastname,
-                            'EmailEncodingKey':'UTF-8',
-                            'TimeZoneSidKey':'America/New_York',
-                            'LocaleSidKey':'en_US',
-                            'ProfileId':ProfileId,
-                            'LanguageLocaleKey':'en_US'})
+            sf.User.create({'userName': actualUsername,
+                            'Alias': actualAlias,
+                            'Email': actualEmail,
+                            'lastName': actualLastname,
+                            'EmailEncodingKey': 'UTF-8',
+                            'TimeZoneSidKey': 'America/New_York',
+                            'LocaleSidKey': 'en_US',
+                            'ProfileId': ProfileId,
+                            'LanguageLocaleKey': 'en_US'})
             print("User created. Now deactivating if not already deactivated.")
             deactivateUser(actualUsername)
-            howMany-=1
+            howMany -= 1
     except:
         print("Users created and deactivated.")
         pass
@@ -96,24 +109,33 @@ def createAndDeactUsers(howMany, userName, Alias, Email, lastName, ProfileId):
 # Check if second Admin exists, if not create one, otherwise report license limitation
 
 def createAdmin2(username):
+    '''
+    :param username:
+    :return:
+    '''
     SysAdminProfileId = getProfileId(SysAdminProfileName)
     try:
-        sf.User.create({'userName':username,
-                        'Alias':'lsladm2',
-                        'Email':'lsladmin@yahoo.com',
-                        'firstName':'Doe',
-                        'lastName':'lsl-Admin2',
-                        'EmailEncodingKey':'UTF-8',
-                        'TimeZoneSidKey':'America/New_York',
-                        'LocaleSidKey':'en_US',
-                        'ProfileId':SysAdminProfileId,
-                        'LanguageLocaleKey':'en_US'})
+        sf.User.create({'userName': username,
+                        'Alias': 'lsladm2',
+                        'Email': 'lsladmin@yahoo.com',
+                        'firstName': 'Doe',
+                        'lastName': 'lsl-Admin2',
+                        'EmailEncodingKey': 'UTF-8',
+                        'TimeZoneSidKey': 'America/New_York',
+                        'LocaleSidKey': 'en_US',
+                        'ProfileId': SysAdminProfileId,
+                        'LanguageLocaleKey': 'en_US'})
         print("2nd Administrator user created with username: "+username+"\n")
     except:
-        Print("\nWas not successful creating 2nd Administrator user. Are there enough licenses or could we deactivate one for the purpose?\n\n")
+        print("\nWas not successful creating 2nd Administrator user. Are there enough licenses or could we deactivate one for the purpose?\n\n")
         #raise
+
 # Deactivate a user if it exists
 def deactivateUser(userName):
+    '''
+    :param userName:
+    :return:
+    '''
     userinfo = sf.query("SELECT IsActive FROM User WHERE username = '"+userName+"'")
     itemlist = ((userinfo.values())[2])
     dict = collections.OrderedDict(userinfo)
@@ -134,6 +156,11 @@ def deactivateUser(userName):
             pass
 
 def createMockupAccount(Owner, testData):
+    '''
+    :param Owner:
+    :param testData:
+    :return:
+    '''
     OwnerId = getUserId(Owner)
     data1 = sf.Account.create({'type': 'Account',
                                'Name': ''+testData+'',
@@ -142,6 +169,10 @@ def createMockupAccount(Owner, testData):
     print("\nSome mockup Account "+testData+" for user: "+Owner+" created.")
 
 def getProfileId(ProfileName):
+    '''
+    :param ProfileName:
+    :return:
+    '''
     query = sf.query("SELECT Id FROM Profile WHERE name = '"+ProfileName+"'")
     dict = collections.OrderedDict(query)
     dictitems = list(dict.values())[2]
@@ -155,6 +186,11 @@ def getProfileId(ProfileName):
         return profId
 
 def getAdminSid(userName, passwordWithToken):
+    '''
+    :param userName:
+    :param passwordWithToken:
+    :return:
+    '''
     loginHeader = {
         'content-type': 'text/xml',
         'charset': 'UTF-8',
@@ -190,6 +226,10 @@ rce.com">
         return AdminSid
 
 def setIPRange(profileName):
+    '''
+    :param profileName:
+    :return:
+    '''
     AdminSid = getAdminSid(ADMIN1_USERNAME, ADMIN1_PTK)
     updateMetadataHeader = {
         'content-type': 'text/xml',

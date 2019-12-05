@@ -1,4 +1,7 @@
-﻿ADMIN1_USERNAME = "xy@yahoo.ca"
+﻿'''
+External configuration data
+'''
+ADMIN1_USERNAME = "xy@yahoo.ca"
 ADMIN1_PASSWORD = "xyz"
 ADMIN1_TOKEN = "xyzhO1eSc4L3tIKL"
 ADMIN1_PTK = ADMIN1_PASSWORD+ADMIN1_TOKEN

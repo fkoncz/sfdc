@@ -1,3 +1,6 @@
+'''
+External configuration data
+'''
 ADMIN1_USERNAME = 'acme@sec-test-company.com'
 ADMIN1_PASSWORD = 'Plrra123!'
 ADMIN1_TOKEN = 'CESaOewG5wfzWUsjrj6q'

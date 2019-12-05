@@ -1,8 +1,4 @@
-﻿import json
-import httplib2
-import time
-import urllib3
-import requests
+﻿import requests
 import xml.dom.minidom
 import collections
 import time
@@ -16,7 +12,6 @@ from string import ascii_lowercase
 from config_sfdc import *
 from simple_salesforce import Salesforce
 
-#Unit tests
 sf = Salesforce(username=ADMIN1_USERNAME, password=ADMIN1_PASSWORD, security_token=ADMIN1_TOKEN)
 
 def main():
@@ -93,6 +88,14 @@ def main():
  
 #Creating a user
 def createUser(userName, Alias, Email, lastName, ProfileName):
+    '''
+    :param userName:
+    :param Alias:
+    :param Email:
+    :param lastName:
+    :param ProfileName:
+    :return:
+    '''
     ProfileId = getProfileId(ProfileName)
     try:
         account = sf.User.create({'userName':userName,
@@ -113,6 +116,10 @@ def createUser(userName, Alias, Email, lastName, ProfileName):
             setPass(userName, DefUserPass)
 
 def getUserFullName(userName):
+    '''
+    :param userName:
+    :return:
+    '''
     userinfo = sf.query("SELECT FirstName, LastName FROM User WHERE username = '"+userName+"'")
     dict = collections.OrderedDict(userinfo)
     dictitems = list(dict.values())[2]
@@ -128,6 +135,11 @@ def getUserFullName(userName):
 
 #Resetting a user's password
 def setPass(userName, NewPassword):
+    '''
+    :param userName:
+    :param NewPassword:
+    :return:
+    '''
     uid = getUserId(userName)
     print("\nDefaulting Password for user with UID: "+uid+"\n")
     sf2 = beatbox.PythonClient()
@@ -139,6 +151,11 @@ def setPass(userName, NewPassword):
 
 #login for all users, keep session Ids
 def getUserSid(User, Pass):
+    '''
+    :param User:
+    :param Pass:
+    :return:
+    '''
     loginHeaders = {
         'content-type': 'text/xml',
         'charset': 'UTF-8',
@@ -169,6 +186,10 @@ def getUserSid(User, Pass):
 
 #This is useful in general to manipulate any user's details
 def getUserId(userName):
+    '''
+    :param userName:
+    :return:
+    '''
     userinfo = sf.query("SELECT Id FROM User WHERE username = '"+userName+"'")
     # Userinfo is an ordereddict that contains a list that contains another ordereddict so we need to dig in a bit:
     dict = collections.OrderedDict(userinfo)
@@ -179,6 +200,10 @@ def getUserId(userName):
     return uid
 
 def getUserProfileId(whichUser):
+    '''
+    :param whichUser:
+    :return:
+    '''
     query = sf.query("SELECT ProfileId FROM User where username = '"+whichUser+"'")
     dict = collections.OrderedDict(query)
     dictitems = list(dict.values())[2]
@@ -192,6 +217,10 @@ def getUserProfileId(whichUser):
         return profId
 
 def getProfileId(ProfileName):
+    '''
+    :param ProfileName:
+    :return:
+    '''
     query = sf.query("SELECT Id FROM Profile WHERE name = '"+ProfileName+"'")
     dict = collections.OrderedDict(query)
     dictitems = list(dict.values())[2]
@@ -205,6 +234,13 @@ def getProfileId(ProfileName):
         return profId
 
 def switchUserProfileOrRole(user1, user1_profile, user2_profile=None, howManyTimes=None):
+    '''
+    :param user1:
+    :param user1_profile:
+    :param user2_profile:
+    :param howManyTimes:
+    :return:
+    '''
     if howManyTimes is None:
         userid = getUserId(user1)
         switchToProfileId = getProfileId(user1_profile)
@@ -225,6 +261,10 @@ def switchUserProfileOrRole(user1, user1_profile, user2_profile=None, howManyTim
 
 # Reactivate a user if existing
 def activateUser(userName):
+    '''
+    :param userName:
+    :return:
+    '''
     userinfo = sf.query("SELECT IsActive FROM User WHERE username = '"+userName+"'")
     itemlist = ((userinfo.values())[2])
     dict = collections.OrderedDict(userinfo)
@@ -240,6 +280,11 @@ def activateUser(userName):
         print("User is active, no need to re-enable.")
 
 def createMockupAccount(howMany, Owner):
+    '''
+    :param howMany:
+    :param Owner:
+    :return:
+    '''
     OwnerId = getUserId(Owner)
     data1 = sf.Account.create({'type': 'Account',
                                'Name': 'lsl-Account-firstMockup',
@@ -261,6 +306,10 @@ def createMockupAccount(howMany, Owner):
     return list
 
 def getAccountId(accountName):
+    '''
+    :param accountName:
+    :return:
+    '''
     userinfo = sf.query("SELECT Id FROM Account WHERE Name = '"+accountName+"'")
     itemlist = ((userinfo.values())[2])
     dict = collections.OrderedDict(userinfo)
@@ -271,6 +320,13 @@ def getAccountId(accountName):
     return accId
 
 def createMockupContract(Owner, accountName, contractTerm, startDate):
+    '''
+    :param Owner:
+    :param accountName:
+    :param contractTerm:
+    :param startDate:
+    :return:
+    '''
     OwnerId = getUserId(Owner)
     accountId = getAccountId(accountName)
     data1 = sf.Contract.create({'AccountId': accountId,
@@ -281,9 +337,18 @@ def createMockupContract(Owner, accountName, contractTerm, startDate):
     return data1
 
 def updateContract(id):
+    '''
+    :param id:
+    :return:
+    '''
     query = sf.Contract.update(id,{'ContractTerm': '75'})
 
 def setIPRange(profileName, AdminSid):
+    '''
+    :param profileName:
+    :param AdminSid:
+    :return:
+    '''
     updateMetadataEnvelope = """
         <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <env:Header>
@@ -311,17 +376,21 @@ def setIPRange(profileName, AdminSid):
     resultValue = resultElement[0].firstChild.nodeValue
     if len(resultValue) == 0:
         print("I've encountered an issue. Request response:\n")
-        print(soapResult.text+"\n")
+        print(soapResponse.text+"\n")
         return None
     else:
         if resultElement[0].firstChild.nodeValue:
             print("Login IP range successfully set.")
         else:
             print("I've encountered an issue. Request response:\n")
-            print(soapResult.text+"\n")
+            print(soapResponse.text+"\n")
             return None
 
 def changeLockoutPeriod(AdminSid):
+    '''
+    :param AdminSid:
+    :return:
+    '''
     soapBody = """
     <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <env:Header>
@@ -342,23 +411,26 @@ def changeLockoutPeriod(AdminSid):
     </env:Envelope>
     """
     soapResult = requests.post(metadataURL, soapBody, headers=updateMetadataHeader)
-
     dom = xml.dom.minidom.parseString(soapResult.text)
     resultElement = dom.getElementsByTagName('success')
     resultValue = resultElement[0].firstChild.nodeValue
     if len(resultValue) == 0:
         print("I've encountered an issue. Request response:\n")
-        print(soapResponse.text+"\n")
+        print(soapResult.text+"\n")
         return None
     else:
         if resultElement[0].firstChild.nodeValue:
             print("New Lockout time successfully set.")
         else:
             print("I've encountered an issue. Request response:\n")
-            print(soapResponse.text+"\n")
+            print(soapResult.text+"\n")
             return None
 
 def disableClickJackWithStdHeaders(AdminSid):
+    '''
+    :param AdminSid:
+    :return:
+    '''
     soapBody = """
     <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <env:Header>
@@ -396,10 +468,17 @@ def disableClickJackWithStdHeaders(AdminSid):
             return None
 
 def randStrGen(nr):
+    '''
+    :param nr:
+    :return:
+    '''
     randString = (''.join(choice(ascii_lowercase) for i in range(nr)))
     return randString
 
 def createZipObjects():
+    '''
+    :return:
+    '''
     if not os.path.exists(os.path.dirname(ruleFile)):
         try:
             os.makedirs(os.path.dirname(ruleFile))
@@ -419,7 +498,12 @@ def createZipObjects():
 </Package>"""+"\n")
 
 def addLeadSharingRule(howMany, accessLevel):
-    while howMany>0:
+    '''
+    :param howMany:
+    :param accessLevel:
+    :return:
+    '''
+    while howMany > 0:
         fullName = "lsl_"+randStrGen(4)
         label = "lsl-"+randStrGen(5)
         with open(ruleFile, "a") as f:
@@ -438,10 +522,19 @@ def addLeadSharingRule(howMany, accessLevel):
             howMany -= 1
 
 def closeRules():
+    '''
+    :return:
+    '''
     with open(ruleFile, "ab") as f:
         f.write("""</SharingRules>"""+"\n")
 
 def getReportId(reportName, asUser, asPass):
+    '''
+    :param reportName:
+    :param asUser:
+    :param asPass:
+    :return:
+    '''
     userSid = getUserSid(asUser, asPass)
     sf2 = Salesforce(instance_url=instanceURL, session_id=userSid)
     query = sf2.query("SELECT Id FROM Report WHERE Name = '"+reportName+"'")
@@ -457,6 +550,13 @@ def getReportId(reportName, asUser, asPass):
         return(reportId,userSid)
 
 def exportReport(howMany, reportName, asUser, asPass):
+    '''
+    :param howMany:
+    :param reportName:
+    :param asUser:
+    :param asPass:
+    :return:
+    '''
     (reportId,userSid) = getReportId(reportName, asUser, asPass)
     while howMany>0:
         response = requests.get(instanceURL+"/"+reportId+"?view=d&snip&export=1&enc=UTF-8&excel=1", headers = sf.headers, cookies = {'sid' : userSid})
@@ -466,6 +566,11 @@ def exportReport(howMany, reportName, asUser, asPass):
         howMany -= 1
 
 def deployZipFile(asUser, AsPass):
+    '''
+    :param asUser:
+    :param AsPass:
+    :return:
+    '''
     UserSid = getUserSid(asUser, AsPass)
     newZip = zipfile.ZipFile(packageZipFile, "w")
     dirPath = './tmp'
@@ -564,6 +669,15 @@ def deployZipFile(asUser, AsPass):
 
 #UBA Risk User: 10x High, Set Trusted IP range.
 def setTrustedIPRange(count, description, startIP, endIP, owner, passwd):
+    '''
+    :param count:
+    :param description:
+    :param startIP:
+    :param endIP:
+    :param owner:
+    :param passwd:
+    :return:
+    '''
     UserSid = getUserSid(owner, passwd)
     soapBodyPart1 = """
         <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -591,10 +705,9 @@ def setTrustedIPRange(count, description, startIP, endIP, owner, passwd):
                 <start>"""+ startIP +"""</start>
                 <end>"""+ endIP +"""</end>
             </ipRanges>"""
-        soapResult = requests.post(metadataURL, soapBodyPart1+ipRange+soapBodyPart2, headers=updateMetadataHeader)
+        requests.post(metadataURL, soapBodyPart1+ipRange+soapBodyPart2, headers=updateMetadataHeader)
         print("Added trusted IP Range "+str(count)+" time(s).")
-        ipRange = """ """
-        soapResult = requests.post(metadataURL, soapBodyPart1+soapBodyPart2, headers=updateMetadataHeader)
+        requests.post(metadataURL, soapBodyPart1+soapBodyPart2, headers=updateMetadataHeader)
         print("Deleted trusted IP Ranges "+str(count)+" times.")
         count -= 1
 

@@ -33,6 +33,12 @@ class AwsUIActions():
         self.password = password
 
     def loginAttempt(self, user_name=None, password=None, numFailedAttempts=0):
+        '''
+        :param user_name:
+        :param password:
+        :param numFailedAttempts:
+        :return:
+        '''
         self.user_name = user_name if user_name != None else self.user_name
         self.password = password if password != None else self.password
         driver = self.driver
@@ -48,10 +54,18 @@ class AwsUIActions():
             count -= 1
 
     def tearDown(self):
+        '''
+        :return:
+        '''
         self.driver.close()
 
     # Mass Delete is achievable via Selenium
     def massDelete(self, asUserLogin, asUserPassword):
+        '''
+        :param asUserLogin:
+        :param asUserPassword:
+        :return:
+        '''
         driver = self.driver
         wait = WebDriverWait(driver, 30)
         self.loginAttempt(asUserLogin, asUserPassword, 1)
@@ -73,6 +87,14 @@ class AwsUIActions():
         (wait.until(EC.presence_of_element_located((By.NAME,"save")))).click()
 
     def massTransfer(self, asUserLogin, asUserPass, transferFrom, transferTo, numberOfTransfers):
+        '''
+        :param asUserLogin:
+        :param asUserPass:
+        :param transferFrom:
+        :param transferTo:
+        :param numberOfTransfers:
+        :return:
+        '''
         driver = self.driver
         wait = WebDriverWait(driver, 15)
         self.loginAttempt(asUserLogin, asUserPass, 1)
@@ -113,6 +135,13 @@ class AwsUIActions():
         print("Done with mass transfer "+str(numberOfTransfers)+" times.")
     
     def createReport(self, howMany, username, password, whichObject):
+        '''
+        :param howMany:
+        :param username:
+        :param password:
+        :param whichObject:
+        :return:
+        '''
         driver = self.driver
         wait = WebDriverWait(driver, 15)
         self.loginAttempt(username, password, 1)
@@ -157,6 +186,15 @@ class AwsUIActions():
         return reportName
         
 def failUserLogins(user_name, password, numFailedAttempts, proxy_ip=None, proxy_port=None, useragent=None):
+    '''
+    :param user_name:
+    :param password:
+    :param numFailedAttempts:
+    :param proxy_ip:
+    :param proxy_port:
+    :param useragent:
+    :return:
+    '''
     aAcct = None
     if not proxy_ip:
             try:
@@ -177,16 +215,36 @@ def failUserLogins(user_name, password, numFailedAttempts, proxy_ip=None, proxy_
                         aAcct.tearDown()
 
 def mass_delete(username, password):
+    '''
+    :param username:
+    :param password:
+    :return:
+    '''
     newobj = AwsUIActions()
     newobj.massDelete(username, password)
     newobj.tearDown()
 
 def mass_transfer(username, password, transFrom, transfto, numTransfers):
+    '''
+    :param username:
+    :param password:
+    :param transFrom:
+    :param transfto:
+    :param numTransfers:
+    :return:
+    '''
     newobj = AwsUIActions()
     newobj.massTransfer(username, password, transFrom, transfto, numTransfers)
     newobj.tearDown()
 
 def create_Report(howMany, username, password, whichObject):
+    '''
+    :param howMany:
+    :param username:
+    :param password:
+    :param whichObject:
+    :return:
+    '''
     newobj = AwsUIActions()
     reportName = newobj.createReport(howMany, username, password, whichObject)
     newobj.tearDown()

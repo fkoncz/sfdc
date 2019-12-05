@@ -4,8 +4,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
-class AwsUIActions():
 
+class AwsUIActions(object):
     def __init__(self, user_name=None,
                  password=None, proxy=0, proxy_ip=None, proxy_port=None,
                  useragent=None, download_dir="c:/tmp"):
@@ -32,6 +32,12 @@ class AwsUIActions():
         self.password = password
 
     def loginAttempt(self, user_name=None, password=None, numFailedAttempts=0):
+        '''
+        :param user_name:
+        :param password:
+        :param numFailedAttempts:
+        :return:
+        '''
         self.user_name = user_name if user_name != None else self.user_name
         self.password = password if password != None else self.password
         driver = self.driver
@@ -48,9 +54,20 @@ class AwsUIActions():
             count -= 1
 
     def tearDown(self):
+        '''
+        :return:
+        '''
         self.driver.close()
 
     def massTransfer(self, asUserLogin, asUserPass, transferFrom, transferTo, numberOfTransfers):
+        '''
+        :param asUserLogin:
+        :param asUserPass:
+        :param transferFrom:
+        :param transferTo:
+        :param numberOfTransfers:
+        :return:
+        '''
         driver = self.driver
         wait = WebDriverWait(driver, 20)
         self.loginAttempt(asUserLogin, asUserPass, 1)
@@ -100,6 +117,15 @@ class AwsUIActions():
 
 
 def failUserLogins(user_name, password, numFailedAttempts, proxy_ip=None, proxy_port=None, useragent=None):
+    '''
+    :param user_name:
+    :param password:
+    :param numFailedAttempts:
+    :param proxy_ip:
+    :param proxy_port:
+    :param useragent:
+    :return:
+    '''
     aAcct = None
     if not proxy_ip:
             try:
@@ -119,9 +145,18 @@ def failUserLogins(user_name, password, numFailedAttempts, proxy_ip=None, proxy_
                 if aAcct:
                         aAcct.tearDown()
 
-#failUserLogins("sservice_1@yahoo.ca", "po09PO)(", 1)
+#failUserLogins("xyx@yahoo.ca", "pass123", 1)
+
 
 def mass_transfer(username, password, transFrom, transfto, numTransfers):
+    '''
+    :param username:
+    :param password:
+    :param transFrom:
+    :param transfto:
+    :param numTransfers:
+    :return:
+    '''
     newobj = AwsUIActions()
     newobj.massTransfer(username, password, transFrom, transfto, numTransfers)
     newobj.tearDown()

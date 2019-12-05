@@ -11,7 +11,7 @@ NewLockoutInterval = 'ThirtyMinutes'
 NewSessionTimeOut = 'FifteenMinutes'
 
 # Check for python version - the script currently is in 3.4
-req_version = (3,4)
+req_version = (3, 4)
 cur_version = sys.version_info
 if cur_version >= req_version:
     print("\n\nPython version min. 3.4 requirement: PASS\n\n")
