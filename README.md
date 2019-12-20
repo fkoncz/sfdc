@@ -1,5 +1,5 @@
 # sfdc
-SalesForce python dev work
+SalesForce python dev work - originally created with SalesForce SDK v36 which was a while ago. Still however, you might find it useful how to use the almost entire scope of the developer SDK document.
 
 
 Testing triggering Salesforce.com security systems for behavioral analysis. PoC.
