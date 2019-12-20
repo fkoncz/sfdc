@@ -1,8 +1,14 @@
 # sfdc
-SalesForce python dev work - originally created with SalesForce SDK v36 which was a while ago. Still however, you might find it useful how to use the almost entire scope of the developer SDK document.
+SalesForce python dev work
 
 
 Testing triggering Salesforce.com security systems for behavioral analysis. PoC.
+
+
+Originally created with SalesForce SDK v35/v46 which was a while ago.
+
+Still however, you might find it useful how to use the almost entire scope of the developer SDK document.
+
 
 Attack paths:
 
