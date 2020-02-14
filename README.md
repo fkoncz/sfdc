@@ -1,8 +1,9 @@
 # sfdc
-SalesForce python dev work
+SalesForce python dev work.
 
+This project was happening in 2016 - please look at the code as throw-away PoC code for code quality. Not meant to be production quality as it is only for proof of concept.
 
-Testing triggering Salesforce.com security systems for behavioral analysis. PoC.
+Testing triggering Salesforce.com security systems for behavioral analysis - PoC.
 
 
 Originally created with SalesForce SDK v35/v46 which was a while ago.
