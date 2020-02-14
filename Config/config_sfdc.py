@@ -1,6 +1,4 @@
-﻿'''
-External configuration data
-'''
+﻿"""External configuration data"""
 ADMIN1_USERNAME = "xy@yahoo.ca"
 ADMIN1_PASSWORD = "xyz"
 ADMIN1_TOKEN = "xyzhO1eSc4L3tIKL"
@@ -22,15 +20,15 @@ LSL_USER4_LASTNAME = "lsl-testuser4"
 LSL_USER4_USERNAME = LSL_USER4_LASTNAME+"@yahoo.com"
 LSL_USER4_ALIAS = "lsl-usr4"
 
-SysAdminProfileName = 'Admin'
-DefUserPass = 'W4terPwd'
+sysadmin_profile_name = 'Admin'
+default_user_password = 'W4terPwd'
 
 loginURL = 'https://login.salesforce.com'
 partnerURL = loginURL+'/services/Soap/c/35.0'
 instanceURL = 'https://na24.salesforce.com'
-metadataURL = instanceURL+'/services/Soap/m/35.0'
+metadata_url = instanceURL + '/services/Soap/m/35.0'
 
-ruleFile = './tmp/unpackaged/sharingRules/Lead.sharingRules'
+rulefile = './tmp/unpackaged/sharingRules/Lead.sharingRules'
 packageZipFile = './deploy.zip'
 
 tokyo_proxy_ip = '54.169.26.12'
@@ -39,8 +37,8 @@ tokyo_proxy_port = 8888
 tor_proxy_ip = 'localhost'
 tor_proxy_port = 8118
 
-#SFDC_TEST_USER1='xy@outlook.com'
-#SFDC_TEST_USER1_PASSWORD='Password123'
+# SFDC_TEST_USER1='xy@outlook.com'
+# SFDC_TEST_USER1_PASSWORD='Password123'
 
 updateMetadataHeader = {
         'content-type': 'text/xml',
@@ -49,13 +47,13 @@ updateMetadataHeader = {
         }
 
 num_failed_attempts = 20
-#howManyUsersToCreateAndDeactivate = 30
-howManyTrustedIPRangeSets = 30
-howManySharingRules = 30
+# howManyUsersToCreateAndDeactivate = 30
+howmany_trusted_ip_range_sets = 30
+how_many_sharing_rules = 30
 howManyMassDelete = 15
 howManyMockupAccounts = 30
 howManyProfileSwitches = 30
 howManyReportsCreate = 30
-howManyExportReports = 30
-howManyMassTransfers = 15
-lockoutInterval = 'ThirtyMinutes'
+how_many_export_reports = 30
+how_many_mass_transfers = 15
+lockout_interval = 'ThirtyMinutes'

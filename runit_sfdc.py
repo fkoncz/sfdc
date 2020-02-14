@@ -9,189 +9,219 @@ import beatbox
 from runit_sfdc_ui import *
 from random import choice
 from string import ascii_lowercase
-from config_sfdc import *
+from Config.config_sfdc import *
 from simple_salesforce import Salesforce
 
 sf = Salesforce(username=ADMIN1_USERNAME, password=ADMIN1_PASSWORD, security_token=ADMIN1_TOKEN)
 
+
 def main():
-    #-----Admin 1--Getting global Administrator Session ID.
-    AdminSid = getUserSid(ADMIN1_USERNAME, ADMIN1_PTK)
-    #Admin 1--Making sure we will be able to manipulate without any identification
-    setIPRange(SysAdminProfileName, AdminSid)
-    #-----Super-Admin-----
-    #-----Admin 1--Because of weak lockout policy, it triggers Security Control: Lockout effective period -super-admin
-    changeLockoutPeriod(AdminSid)
-    #-----Admin 1--Disable clickjack protection for customer Visualforce pages with standard headers
-    disableClickJackWithStdHeaders(AdminSid)
-    #-----Admin 1--Creating 4 users - due to license limitations, the other 2 will be Force.com Free users.
-    createUser(LSL_USER1_USERNAME, LSL_USER1_ALIAS, LSL_USER1_USERNAME, LSL_USER1_USERNAME, 'Standard Platform User')
-    createUser(LSL_USER2_USERNAME, LSL_USER2_ALIAS, LSL_USER2_USERNAME, LSL_USER2_USERNAME, 'Force.com - Free User')
-    createUser(LSL_USER3_USERNAME, LSL_USER3_ALIAS, LSL_USER3_USERNAME, LSL_USER3_USERNAME, 'Force.com - Free User')
-    createUser(LSL_USER4_USERNAME, LSL_USER4_ALIAS, LSL_USER4_USERNAME, LSL_USER4_USERNAME, 'Force.com - App Subscription User')
-    #-----Admin 1--set IP range (for admin profile) - making sure we will be able to manipulate without any identification
-    setIPRange(SysAdminProfileName, AdminSid)
+    # -----Admin 1--Getting global Administrator Session ID.
+    admin_sid = get_user_sid(ADMIN1_USERNAME, ADMIN1_PTK)
 
+    # Admin 1--Making sure we will be able to manipulate without any identification
+    set_ip_range(sysadmin_profile_name, admin_sid)
 
-    #Path#1: Account compromise --User1
-    #-----User 1--brute force login, Attacker brute forced account successfully, triggers Threat: Failed login(e.g. 5 average, 2x) 
-    switchUserProfileOrRole(LSL_USER1_USERNAME, 'System Administrator')
+    # -----Super-Admin-----
+    # -----Admin 1--Because of weak lockout policy, it triggers
+    # Security Control: Lockout effective period -super-admin
+    change_lockout_period(admin_sid)
+
+    # -----Admin 1--Disable clickjack protection for customer Visualforce pages with standard headers
+    disable_clickjack_with_standard_headers(admin_sid)
+
+    # -----Admin 1--Creating 4 users - due to license limitations,
+    # the other 2 will be Force.com Free users.
+    create_user(LSL_USER1_USERNAME, LSL_USER1_ALIAS, LSL_USER1_USERNAME, LSL_USER1_USERNAME, 'Standard Platform User')
+    create_user(LSL_USER2_USERNAME, LSL_USER2_ALIAS, LSL_USER2_USERNAME, LSL_USER2_USERNAME, 'Force.com - Free User')
+    create_user(LSL_USER3_USERNAME, LSL_USER3_ALIAS, LSL_USER3_USERNAME, LSL_USER3_USERNAME, 'Force.com - Free User')
+    create_user(LSL_USER4_USERNAME, LSL_USER4_ALIAS, LSL_USER4_USERNAME, LSL_USER4_USERNAME, 'Force.com - App'
+                                                                                             'Subscription User')
+
+    # -----Admin 1--set IP range (for admin profile) - making sure we
+    # will be able to manipulate without any identification
+    set_ip_range(sysadmin_profile_name, admin_sid)
+
+    # Path 1: Account compromise -- User1
+    # -----User 1--brute force login, Attacker brute forced account successfully,
+    # triggers Threat: Failed login(e.g. 5 average, 2x)
+    switch_user_profile_or_role(LSL_USER1_USERNAME, 'System Administrator')
+
     # failUserLogins(SFDC_TEST_USER1, "X", num_failed_attempts)
-    #-----User 1--Login from remote triggers UBA Risk User: High, activity from unseen browser, device, OS, unseen location(including unseen IPs v2) (score approx: 45-50)
-    # failUserLogins(SFDC_TEST_USER1, SFDC_TEST_USER1_PASSWORD, num_failed_attempts, tor_proxy_ip, tor_proxy_port, "Mozilla/1.0 (Windows CE 0.1; Win63; x63; rv:1.1) GeckoX/20100101 Firebug/0.1")
-    #-----User 1-----UBA Risk User: 10x High, Data export --- Instead of this, Attacker set Trusted IP Range to enable backdoor access, triggers Policy alert.
+    # -----User 1--Login from remote triggers UBA Risk User: High, activity from unseen browser,
+    # device, OS, unseen location(including unseen IPs v2) (score approx: 45-50)
+    # failUserLogins(SFDC_TEST_USER1, SFDC_TEST_USER1_PASSWORD, num_failed_attempts, tor_proxy_ip,
+    # tor_proxy_port, "Mozilla/1.0 (Windows CE 0.1; Win63; x63; rv:1.1) GeckoX/20100101 Firebug/0.1")
+    # -----User 1-----UBA Risk User: 10x High, Data export --- Instead of this,
+    # Attacker set Trusted IP Range to enable backdoor access, triggers Policy alert.
     # To verify, in the UI this is at "Network Access"
-    setTrustedIPRange(howManyTrustedIPRangeSets, 'lsl-TrustRange-'+randStrGen(4),'192.168.0.11','192.168.0.200', LSL_USER1_USERNAME, DefUserPass)
-    switchUserProfileOrRole(LSL_USER1_USERNAME, 'Standard Platform User')
+    set_trusted_ip_range(howmany_trusted_ip_range_sets, 'lsl-TrustRange-' + random_string_generator(4), '192.168.0.11',
+                         '192.168.0.200', LSL_USER1_USERNAME, default_user_password)
+    switch_user_profile_or_role(LSL_USER1_USERNAME, 'Standard Platform User')
 
-    #Path 2: Data Exfiltration--User2
-    #-----User 2--Grant Admin permissions
-    switchUserProfileOrRole(LSL_USER2_USERNAME, 'System Administrator')
-    #-----User 2--60+(configurable) Mass Transfer to another account, triggers UBA Risk User: Medium, Mass Transfer+After-hr.
-    #Creating given numbers of mockup account data to have something to transfer.
-    LSL_USER2_FULLNAME = getUserFullName(LSL_USER2_USERNAME)
-    Admin1FullName = getUserFullName(ADMIN1_USERNAME)
-    createMockupAccount(howManyMockupAccounts, ADMIN1_USERNAME)
-    mass_transfer(LSL_USER2_USERNAME, DefUserPass, Admin1FullName, LSL_USER2_FULLNAME, howManyMassTransfers)
-    switchUserProfileOrRole(LSL_USER2_USERNAME, 'Force.com - Free User')
+    # Path 2: Data exfiltration -- User2
+    # -----User 2--Grant Admin permissions
+    switch_user_profile_or_role(LSL_USER2_USERNAME, 'System Administrator')
+    # -----User 2--60+(configurable) Mass Transfer to another account,
+    # triggers UBA Risk User: Medium, Mass Transfer+After-hr.
+    # Creating given numbers of mockup account data to have something to transfer.
+    LSL_USER2_FULLNAME = get_user_full_name(LSL_USER2_USERNAME)
+    admin1_full_name = get_user_full_name(ADMIN1_USERNAME)
+    create_mockup_account(howManyMockupAccounts, ADMIN1_USERNAME)
+    mass_transfer(LSL_USER2_USERNAME, default_user_password, admin1_full_name, LSL_USER2_FULLNAME,
+                  how_many_mass_transfers)
+    switch_user_profile_or_role(LSL_USER2_USERNAME, 'Force.com - Free User')
 
-    #Path#3: Insider Threat--User3
-    ##-----User 3--Admin grant excessive permissions to insider user, triggers Policy alert: Profile/Change user permissions
-    switchUserProfileOrRole(LSL_USER3_USERNAME, 'System Administrator')
-    #-----User 3--We deploy new Sharing Rules as an insider threat.
-    #We have some static XML content and if we want to add multiple rules, don't want to add the header all the time.
-    #create some mockup sharing rules.
-    createZipObjects()
-    addLeadSharingRule(howManySharingRules, "Read")
-    closeRules()
-    deployZipFile(LSL_USER3_USERNAME, DefUserPass)
-    #-----User 3--3-Insider user is corrupted by a vendor, he helped vendor to extend contract term, triggers Policy alert: Contract Create+Update
-    response = createMockupContract(LSL_USER3_USERNAME, "lsl-Account-firstMockup", "3", "2016-03-01")
-    updateContract(response['id'])
-    #-----User 3--4-Before termination, insider user also Mass deleting data, triggers UBA Risk User: High, Mass Delete
+    # Path#3: Insider Threat--User3
+    # -----User 3--Admin grant excessive permissions to insider user, triggers Policy alert:
+    # Profile/Change user permissions
+    switch_user_profile_or_role(LSL_USER3_USERNAME, 'System Administrator')
+
+    # -----User 3--We deploy new Sharing Rules as an insider threat.
+    # We have some static XML content and if we want to add multiple rules,
+    # don't want to add the header all the time.
+    # create some mockup sharing rules.
+    create_zip_objects()
+    add_lead_sharing_rule(how_many_sharing_rules, "Read")
+    close_rules()
+    deploy_zipfile(LSL_USER3_USERNAME, default_user_password)
+
+    # -----User 3--3-Insider user is corrupted by a vendor, he helped vendor to extend
+    # contract term, triggers Policy alert: Contract Create+Update
+    response = create_mockup_contract(LSL_USER3_USERNAME, "lsl-Account-firstMockup", "3", "2016-03-01")
+    update_contract(response['id'])
+
+    # -----User 3--4-Before termination, insider user also Mass deleting data,
+    # triggers UBA Risk User: High, Mass Delete
     for x in range(0, howManyMassDelete):
-        createMockupAccount(howManyMockupAccounts, LSL_USER3_USERNAME)
-        mass_delete(LSL_USER3_USERNAME, DefUserPass)
-        print("Mass Delete iteration nr.: "+str(x))
-    #-----User 3--Policy alert: Change user profile
-    switchUserProfileOrRole(LSL_USER3_USERNAME, 'Force.com - Free User')
+        create_mockup_account(howManyMockupAccounts, LSL_USER3_USERNAME)
+        mass_delete(LSL_USER3_USERNAME, default_user_password)
+        print("Mass Delete iteration nr.: " + str(x))
 
-    #Path 4: Insider Threat--User4
-    #-----User 4--UBA Risk User: 20x Medium, Reports export, Report Run
-    #2-The 3rd party has the permission to access sensitive data and function, he run and export the reports, sale to competitor, triggers UBA Risk User: Medium, Reports exported, Report Run
-    #3-The 3rd party also export data, triggers UBA Risk User: High, Data Export
-    #4-For all report activities by the 3rd party, stand out in KSI: Top customer report run and Top customer report exported
-    switchUserProfileOrRole(LSL_USER4_USERNAME, 'System Administrator')
-    reportName = create_Report(howManyReportsCreate, LSL_USER4_USERNAME, DefUserPass, "Accounts")
-    exportReport(howManyExportReports, reportName, LSL_USER4_USERNAME, DefUserPass)
-    switchUserProfileOrRole(LSL_USER4_USERNAME, 'Force.com - App Subscription User')
- 
-#Creating a user
-def createUser(userName, Alias, Email, lastName, ProfileName):
-    '''
-    :param userName:
-    :param Alias:
-    :param Email:
-    :param lastName:
-    :param ProfileName:
+    # -----User 3--Policy alert: Change user profile
+    switch_user_profile_or_role(LSL_USER3_USERNAME, 'Force.com - Free User')
+
+    # Path 4: Insider Threat--User4
+    # -----User 4--UBA Risk User: 20x Medium, Reports export, Report Run
+    # 2 - The 3rd party has the permission to access sensitive data and function,
+    #     he run and export the reports, sale to competitor, triggers UBA Risk User: Medium,
+    #     Reports exported, Report Run
+    # 3 - The 3rd party also export data, triggers UBA Risk User: High, Data Export
+    # 4 - For all report activities by the 3rd party, stand out in KSI:
+    # Top customer report run and Top customer report exported
+    switch_user_profile_or_role(LSL_USER4_USERNAME, 'System Administrator')
+    report_name = create_report(howManyReportsCreate, LSL_USER4_USERNAME, default_user_password, "Accounts")
+    export_report(how_many_export_reports, report_name, LSL_USER4_USERNAME, default_user_password)
+    switch_user_profile_or_role(LSL_USER4_USERNAME, 'Force.com - App Subscription User')
+
+
+# Creating a user
+def create_user(username, alias, email, last_name, profile_name):
+    """
+    :param username:
+    :param alias:
+    :param email:
+    :param last_name:
+    :param profile_name:
     :return:
-    '''
-    ProfileId = getProfileId(ProfileName)
+    """
+    profile_id = get_profile_id(profile_name)
     try:
-        account = sf.User.create({'userName':userName,
-                              'Alias':Alias,
-                              'Email':Email,
-                              'lastName':lastName,
-                              'EmailEncodingKey':'UTF-8',
-                              'TimeZoneSidKey':'America/New_York',
-                              'LocaleSidKey':'en_US',
-                              'ProfileId':ProfileId,
-                              'LanguageLocaleKey':'en_US'})
-        setPass(userName, DefUserPass)
-    except:
+        sf.User.create({'userName': username,
+                        'Alias': alias,
+                        'Email': email,
+                        'lastName': last_name,
+                        'EmailEncodingKey': 'UTF-8',
+                        'TimeZoneSidKey': 'America/New_York',
+                        'LocaleSidKey': 'en_US',
+                        'profile_id': profile_id,
+                        'LanguageLocaleKey': 'en_US'})
+        set_password(username, default_user_password)
+    except Exception as e:
         try:
-            activateUser(userName)
-            setPass(userName, DefUserPass)
-        except:
-            setPass(userName, DefUserPass)
+            activate_user(username)
+            set_password(username, default_user_password)
+        except Exception as e:
+            set_password(username, default_user_password)
 
-def getUserFullName(userName):
-    '''
-    :param userName:
+
+def get_user_full_name(username):
+    """
+    :param username:
     :return:
-    '''
-    userinfo = sf.query("SELECT FirstName, LastName FROM User WHERE username = '"+userName+"'")
+    """
+    userinfo = sf.query("SELECT FirstName, LastName FROM User WHERE username = '" + username + "'")
     dict = collections.OrderedDict(userinfo)
     dictitems = list(dict.values())[2]
-    itemlist = (dictitems.pop())
-    dict2 = collections.OrderedDict(itemlist)
-    Firstname = list(dict2.values())[1]
-    Lastname = list(dict2.values())[2]
-    if Firstname is None:
-        Fullname = Lastname
+    firstname = list(collections.OrderedDict(dictitems.pop()).values())[1]
+    lastname = list(collections.OrderedDict(dictitems.pop()).values())[2]
+    if firstname is None:
+        fullname = lastname
     else:
-        Fullname = Firstname+" "+Lastname
-    return Fullname
+        fullname = firstname + " " + lastname
+    return fullname
 
-#Resetting a user's password
-def setPass(userName, NewPassword):
-    '''
-    :param userName:
-    :param NewPassword:
+
+# Resetting a user's password
+def set_password(username, default_user_password):
+    """
+    :param username:
+    :param default_user_password:
     :return:
-    '''
-    uid = getUserId(userName)
-    print("\nDefaulting Password for user with UID: "+uid+"\n")
+    """
+    uid = get_user_id(username)
+    print("\nDefaulting Password for user with UID: " + uid + "\n")
     sf2 = beatbox.PythonClient()
     sf2.login(ADMIN1_USERNAME, ADMIN1_PASSWORD)
     try:
-        sf2.setPassword(uid, DefUserPass)
-    except:
+        sf2.setPassword(uid, default_user_password)
+    except Exception as e:
         pass
 
-#login for all users, keep session Ids
-def getUserSid(User, Pass):
-    '''
-    :param User:
-    :param Pass:
+
+# Login for all users, keep session Ids
+def get_user_sid(username, password):
+    """
+    :param username:
+    :param password:
     :return:
-    '''
-    loginHeaders = {
+    """
+    login_headers = {
         'content-type': 'text/xml',
         'charset': 'UTF-8',
         'SOAPAction': 'login'
         }
-    loginEnvelope = """
+    login_envelope = """
         <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:enterprise.soap.sforce.com">
             <soapenv:Header>
             </soapenv:Header>
         <soapenv:Body>
             <urn:login>
-                <urn:username>""" + ''+User+'' + """</urn:username>
-                <urn:password>""" + ''+Pass+'' + """</urn:password>
+                <urn:username>""" + '' + username + '' + """</urn:username>
+                <urn:password>""" + '' + password + '' + """</urn:password>
             </urn:login>
         </soapenv:Body>
         </soapenv:Envelope>
     """
-    loginResponse = requests.post(partnerURL, loginEnvelope, headers=loginHeaders)
-    dom = xml.dom.minidom.parseString(loginResponse.text)
-    userSidResult = dom.getElementsByTagName('sessionId')
-    if userSidResult[0].firstChild.nodeValue is None:
+    login_response = requests.post(partnerURL, login_envelope, headers=login_headers)
+    dom = xml.dom.minidom.parseString(login_response.text)
+    user_sid_result = dom.getElementsByTagName('sessionId')
+    if user_sid_result[0].firstChild.nodeValue is None:
         print("\nI wasn't successful. Error was:\n")
-        print(loginResponse.text + '\n')
+        print(login_response.text + '\n')
     else:
-        userSid = userSidResult[0].firstChild.nodeValue
-        return(userSid)
+        user_sid = user_sid_result[0].firstChild.nodeValue
+        return user_sid
 
 
-#This is useful in general to manipulate any user's details
-def getUserId(userName):
-    '''
-    :param userName:
+# This is useful in general to manipulate any user's details
+def get_user_id(username):
+    """
+    :param username:
     :return:
-    '''
-    userinfo = sf.query("SELECT Id FROM User WHERE username = '"+userName+"'")
-    # Userinfo is an ordereddict that contains a list that contains another ordereddict so we need to dig in a bit:
+    """
+    # Userinfo is an OrderedDict that contains a list that contains another OrderedDict so we need to dig in a bit.
+    userinfo = sf.query("SELECT Id FROM User WHERE username = '" + username + "'")
     dict = collections.OrderedDict(userinfo)
     dictitems = list(dict.values())[2]
     itemlist = (dictitems.pop())
@@ -199,167 +229,162 @@ def getUserId(userName):
     uid = list(dict2.values())[1]
     return uid
 
-def getUserProfileId(whichUser):
-    '''
-    :param whichUser:
+
+def get_user_profile_id(which_user):
+    """
+    :param which_user:
     :return:
-    '''
-    query = sf.query("SELECT ProfileId FROM User where username = '"+whichUser+"'")
-    dict = collections.OrderedDict(query)
-    dictitems = list(dict.values())[2]
+    """
+    query = sf.query("SELECT ProfileId FROM User where username = '" + which_user + "'")
+    dictitems = list(collections.OrderedDict(query).values())[2]
     if len(dictitems) == 0:
         print("Could not get System Administrator Profile Id. Continuing...\n")
         return None
     else:
-        itemlist = (dictitems.pop())
-        dict2 = collections.OrderedDict(itemlist)
-        profId = list(dict2.values())[1]
-        return profId
+        prof_id = list(collections.OrderedDict(dictitems.pop()).values())[1]
+        return prof_id
 
-def getProfileId(ProfileName):
-    '''
-    :param ProfileName:
+
+def get_profile_id(profile_name):
+    """
+    :param profile_name:
     :return:
-    '''
-    query = sf.query("SELECT Id FROM Profile WHERE name = '"+ProfileName+"'")
-    dict = collections.OrderedDict(query)
-    dictitems = list(dict.values())[2]
+    """
+    query = sf.query("SELECT Id FROM Profile WHERE name = '" + profile_name + "'")
+    dictitems = list(collections.OrderedDict(query).values())[2]
     if len(dictitems) == 0:
         print("Could not get System Administrator Profile Id. Continuing...\n")
         return None
     else:
-        itemlist = (dictitems.pop())
-        dict2 = collections.OrderedDict(itemlist)
-        profId = list(dict2.values())[1]
-        return profId
+        prof_id = list(collections.OrderedDict(dictitems.pop()).values())[1]
+        return prof_id
 
-def switchUserProfileOrRole(user1, user1_profile, user2_profile=None, howManyTimes=None):
-    '''
+
+def switch_user_profile_or_role(user1, user1_profile, user2_profile=None, how_many_times=None):
+    """
     :param user1:
     :param user1_profile:
     :param user2_profile:
-    :param howManyTimes:
+    :param how_many_times:
     :return:
-    '''
-    if howManyTimes is None:
-        userid = getUserId(user1)
-        switchToProfileId = getProfileId(user1_profile)
-        sf.User.update(userid,{'ProfileId': ''+switchToProfileId+''})
+    """
+    if how_many_times is None:
+        user_id = get_user_id(user1)
+        switch_to_profile_id = get_profile_id(user1_profile)
+        sf.User.update(user_id, {'ProfileId': '' + switch_to_profile_id + ''})
     else:
-        while howManyTimes>0:
-            userid = getUserId(user1)
-            origProfileId = getUserProfileId(user1)
-            switchbetween1 = getProfileId(user1_profile)
-            switchbetween2 = getProfileId(user2_profile)
-            sf.User.update(userid,{'ProfileId': ''+switchbetween2+''})
-            print("The "+user1+"'s profile switched from "+switchbetween1+" to "+switchbetween2+" Profile Id.")
-            newProfileId = getUserProfileId(user1)
-            sf.User.update(userid,{'ProfileId': ''+switchbetween1+''})
-            print("The "+user1+"'s profile switched from "+switchbetween2+" to "+switchbetween1+" Profile Id.")
-            print("UserProfile switches left: "+str(howManyTimes-1))
-            howManyTimes -= 1
+        while how_many_times > 0:
+            user_id = get_user_id(user1)
+            get_user_profile_id(user1)
+            switch_between1 = get_profile_id(user1_profile)
+            switch_between2 = get_profile_id(user2_profile)
+            sf.User.update(user_id, {'ProfileId': '' + switch_between2 + ''})
+            print("The " + user1 + "'s profile switched from " + switch_between1 + " to " + switch_between2 +
+                  " Profile Id.")
+            get_user_profile_id(user1)
+            sf.User.update(user_id, {'ProfileId': '' + switch_between1 + ''})
+            print("The " + user1 + "'s profile switched from " + switch_between2 + " to " + switch_between1 +
+                  " Profile Id.")
+            print("UserProfile switches left: " + str(how_many_times - 1))
+            how_many_times -= 1
+
 
 # Reactivate a user if existing
-def activateUser(userName):
-    '''
-    :param userName:
+def activate_user(username):
+    """
+    :param username:
     :return:
-    '''
-    userinfo = sf.query("SELECT IsActive FROM User WHERE username = '"+userName+"'")
-    itemlist = ((userinfo.values())[2])
-    dict = collections.OrderedDict(userinfo)
-    dictitems = list(dict.values())[2]
-    itemlist = (dictitems.pop())
-    dict2 = collections.OrderedDict(itemlist)
-    isActive = list(dict2.values())[1]
-    if not isActive:
+    """
+    userinfo = sf.query("SELECT IsActive FROM User WHERE username = '" + username + "'")
+    itemlist = (userinfo.values())[2]
+    dictitems = list(collections.OrderedDict(userinfo).values())[2]
+    is_active = list(collections.OrderedDict(dictitems.pop()).values())[1]
+    if not is_active:
         print("User exists, but is not active. Activating.")
-        uid = getUserId(userName)
-        sf.User.update(uid,{'IsActive' : 'true'})
+        sf.User.update(get_user_id(username), {'IsActive': 'true'})
     else:
         print("User is active, no need to re-enable.")
 
-def createMockupAccount(howMany, Owner):
-    '''
-    :param howMany:
-    :param Owner:
+
+def create_mockup_account(how_many, owner):
+    """
+    :param how_many:
+    :param owner:
     :return:
-    '''
-    OwnerId = getUserId(Owner)
-    data1 = sf.Account.create({'type': 'Account',
+    """
+    owner_id = get_user_id(owner)
+    sf.Account.create({'type': 'Account',
                                'Name': 'lsl-Account-firstMockup',
                                'Website': 'http://www.IamJustAtestWebSite.com',
-                               'OwnerId': ''+OwnerId+''})
-    list = ['lsl-Account-firstMockup']
-    howMany -= 1
-    while howMany > 0:
-        testData = "lsl-Account-"+randStrGen(8)
-        OwnerId = getUserId(Owner)
-        data1 = sf.Account.create({'type': 'Account',
-                                   'Name': ''+testData+'',
-                                   'Website': 'http://www.IamJustAtestWebSite.com',
-                                   'OwnerId': ''+OwnerId+''})
-        print("Some mockup Account "+testData+" for user: "+Owner+" created.")
-        list.append(testData)
-        howMany -= 1
-    print("Following mockup Accounts have been created: "+ str(list))
-    return list
+                               'owner_id': '' + owner_id + ''})
+    acc_list = ['lsl-Account-firstMockup']
+    how_many -= 1
+    while how_many > 0:
+        test_data = "lsl-Account-" + random_string_generator(8)
+        owner_id = get_user_id(owner)
+        sf.Account.create({'type': 'Account',
+                           'Name': '' + test_data + '',
+                           'Website': 'http://www.IamJustAtestWebSite.com',
+                           'owner_id': '' + owner_id + ''})
+        print("Some mockup Account " + test_data + " for user: " + owner + " created.")
+        acc_list.append(test_data)
+        how_many -= 1
+    print("Following mockup Accounts have been created: " + str(acc_list))
+    return acc_list
 
-def getAccountId(accountName):
-    '''
-    :param accountName:
-    :return:
-    '''
-    userinfo = sf.query("SELECT Id FROM Account WHERE Name = '"+accountName+"'")
-    itemlist = ((userinfo.values())[2])
-    dict = collections.OrderedDict(userinfo)
-    dictitems = list(dict.values())[2]
-    itemlist = (dictitems.pop())
-    dict2 = collections.OrderedDict(itemlist)
-    accId = list(dict2.values())[1]
-    return accId
 
-def createMockupContract(Owner, accountName, contractTerm, startDate):
-    '''
-    :param Owner:
-    :param accountName:
-    :param contractTerm:
-    :param startDate:
+def get_account_id(account_name):
+    """
+    :param account_name:
     :return:
-    '''
-    OwnerId = getUserId(Owner)
-    accountId = getAccountId(accountName)
-    data1 = sf.Contract.create({'AccountId': accountId,
-                                'ContractTerm': contractTerm,
-                                'StartDate': startDate,
-                                'OwnerId': OwnerId})
-    print("Mockup contract for Account "+accountId+" created.")
+    """
+    userinfo = sf.query("SELECT Id FROM Account WHERE Name = '" + account_name + "'")
+    acc_id = list(collections.OrderedDict(list(collections.OrderedDict(userinfo).values())[2].pop()).values())[1]
+    return acc_id
+
+
+def create_mockup_contract(owner, account_name, contract_term, start_date):
+    """
+    :param owner:
+    :param account_name:
+    :param contract_term:
+    :param start_date:
+    :return:
+    """
+    account_id = get_account_id(account_name)
+    data1 = sf.Contract.create({'AccountId': account_id,
+                                'ContractTerm': contract_term,
+                                'StartDate': start_date,
+                                'owner_id': get_user_id(owner)})
+    print("Mockup contract for Account " + account_id + " created.")
     return data1
 
-def updateContract(id):
-    '''
-    :param id:
-    :return:
-    '''
-    query = sf.Contract.update(id,{'ContractTerm': '75'})
 
-def setIPRange(profileName, AdminSid):
-    '''
-    :param profileName:
-    :param AdminSid:
+def update_contract(user_id):
+    """
+    :param user_id:
     :return:
-    '''
-    updateMetadataEnvelope = """
+    """
+    sf.Contract.update(user_id, {'ContractTerm': '75'})
+
+
+def set_ip_range(profile_name, admin_sid):
+    """
+    :param profile_name:
+    :param admin_sid:
+    :return:
+    """
+    update_metadata_envelope = """
         <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <env:Header>
                 <urn:SessionHeader xmlns:urn="http://soap.sforce.com/2006/04/metadata">
-                    <urn:sessionId>"""+AdminSid+"""</urn:sessionId>
+                    <urn:sessionId>""" + admin_sid + """</urn:sessionId>
                 </urn:SessionHeader>
             </env:Header>
             <env:Body>
                 <updateMetadata xmlns="http://soap.sforce.com/2006/04/metadata">
                     <metadata xsi:type="Profile">
-                    <fullName>"""+profileName+"""</fullName>
+                    <fullName>""" + profile_name + """</fullName>
                        <loginIpRanges>
                           <endAddress>255.255.255.255</endAddress>
                           <startAddress>0.0.0.0</startAddress>
@@ -370,32 +395,33 @@ def setIPRange(profileName, AdminSid):
         </env:Envelope>
         """
 
-    soapResponse = requests.post(metadataURL, updateMetadataEnvelope, headers=updateMetadataHeader)
-    dom = xml.dom.minidom.parseString(soapResponse.text)
-    resultElement = dom.getElementsByTagName('success')
-    resultValue = resultElement[0].firstChild.nodeValue
-    if len(resultValue) == 0:
+    soap_response = requests.post(metadata_url, update_metadata_envelope, headers=updateMetadataHeader)
+    dom = xml.dom.minidom.parseString(soap_response.text)
+    result_element = dom.getElementsByTagName('success')
+    result_value = result_element[0].firstChild.nodeValue
+    if len(result_value) == 0:
         print("I've encountered an issue. Request response:\n")
-        print(soapResponse.text+"\n")
+        print(soap_response.text + "\n")
         return None
     else:
-        if resultElement[0].firstChild.nodeValue:
+        if result_element[0].firstChild.nodeValue:
             print("Login IP range successfully set.")
         else:
             print("I've encountered an issue. Request response:\n")
-            print(soapResponse.text+"\n")
+            print(soap_response.text + "\n")
             return None
 
-def changeLockoutPeriod(AdminSid):
-    '''
-    :param AdminSid:
+
+def change_lockout_period(admin_sid):
+    """
+    :param admin_sid:
     :return:
-    '''
-    soapBody = """
+    """
+    soap_body = """
     <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <env:Header>
             <urn:SessionHeader xmlns:urn="http://soap.sforce.com/2006/04/metadata">
-                <urn:sessionId>""" + AdminSid + """</urn:sessionId>
+                <urn:sessionId>""" + admin_sid + """</urn:sessionId>
             </urn:SessionHeader>
         </env:Header>
         <env:Body>
@@ -403,39 +429,40 @@ def changeLockoutPeriod(AdminSid):
                 <metadata xsi:type="SecuritySettings">
                 <fullName>*</fullName>
                 <passwordPolicies>
-                      <lockoutInterval>""" + lockoutInterval + """</lockoutInterval>
+                      <lockoutInterval>""" + lockout_interval + """</lockoutInterval>
                    </passwordPolicies>
                 </metadata>
             </updateMetadata>
         </env:Body>
     </env:Envelope>
     """
-    soapResult = requests.post(metadataURL, soapBody, headers=updateMetadataHeader)
-    dom = xml.dom.minidom.parseString(soapResult.text)
-    resultElement = dom.getElementsByTagName('success')
-    resultValue = resultElement[0].firstChild.nodeValue
-    if len(resultValue) == 0:
+    soap_result = requests.post(metadata_url, soap_body, headers=updateMetadataHeader)
+    dom = xml.dom.minidom.parseString(soap_result.text)
+    result_element = dom.getElementsByTagName('success')
+    result_value = result_element[0].firstChild.nodeValue
+    if len(result_value) == 0:
         print("I've encountered an issue. Request response:\n")
-        print(soapResult.text+"\n")
+        print(soap_result.text + "\n")
         return None
     else:
-        if resultElement[0].firstChild.nodeValue:
+        if result_element[0].firstChild.nodeValue:
             print("New Lockout time successfully set.")
         else:
             print("I've encountered an issue. Request response:\n")
-            print(soapResult.text+"\n")
+            print(soap_result.text + "\n")
             return None
 
-def disableClickJackWithStdHeaders(AdminSid):
-    '''
-    :param AdminSid:
+
+def disable_clickjack_with_standard_headers(admin_sid):
+    """
+    :param admin_sid:
     :return:
-    '''
-    soapBody = """
+    """
+    soap_body = """
     <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <env:Header>
             <urn:SessionHeader xmlns:urn="http://soap.sforce.com/2006/04/metadata">
-                <urn:sessionId>""" + AdminSid + """</urn:sessionId>
+                <urn:sessionId>""" + admin_sid + """</urn:sessionId>
             </urn:SessionHeader>
         </env:Header>
         <env:Body>
@@ -450,43 +477,45 @@ def disableClickJackWithStdHeaders(AdminSid):
         </env:Body>
     </env:Envelope>
     """
-    soapResult = requests.post(metadataURL, soapBody, headers=updateMetadataHeader)
+    soap_result = requests.post(metadata_url, soap_body, headers=updateMetadataHeader)
 
-    dom = xml.dom.minidom.parseString(soapResult.text)
-    resultElement = dom.getElementsByTagName('success')
-    resultValue = resultElement[0].firstChild.nodeValue
-    if len(resultValue) == 0:
+    dom = xml.dom.minidom.parseString(soap_result.text)
+    result_element = dom.getElementsByTagName('success')
+    result_value = result_element[0].firstChild.nodeValue
+    if len(result_value) == 0:
         print("I've encountered an issue. Request response:\n")
-        print(soapResult.text+"\n")
+        print(soap_result.text + "\n")
         return None
     else:
-        if resultElement[0].firstChild.nodeValue:
+        if result_element[0].firstChild.nodeValue:
             print("Successfully disabled clickjack protection for customer Visualforce pages with standard headers.")
         else:
             print("I've encountered an issue. Request response:\n")
-            print(soapResult.text+"\n")
+            print(soap_result.text + "\n")
             return None
 
-def randStrGen(nr):
-    '''
+
+def random_string_generator(nr):
+    """
     :param nr:
     :return:
-    '''
-    randString = (''.join(choice(ascii_lowercase) for i in range(nr)))
-    return randString
+    """
+    rand_string = (''.join(choice(ascii_lowercase) for i in range(nr)))
+    return rand_string
 
-def createZipObjects():
-    '''
+
+def create_zip_objects():
+    """
     :return:
-    '''
-    if not os.path.exists(os.path.dirname(ruleFile)):
+    """
+    if not os.path.exists(os.path.dirname(rulefile)):
         try:
-            os.makedirs(os.path.dirname(ruleFile))
-        except:
+            os.makedirs(os.path.dirname(rulefile))
+        except Exception as e:
             pass
-    with open(ruleFile, "w") as f:
+    with open(rulefile, "w") as f:
         f.write("""<?xml version="1.0" encoding="UTF-8"?>
-<SharingRules xmlns="http://soap.sforce.com/2006/04/metadata">"""+"\n")
+<SharingRules xmlns="http://soap.sforce.com/2006/04/metadata">""" + "\n")
     with open('./tmp/unpackaged/package.xml', "w") as f:
         f.write("""<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -495,21 +524,22 @@ def createZipObjects():
         <name>SharingRules</name>
     </types>
     <version>35.0</version>
-</Package>"""+"\n")
+</Package>""" + "\n")
 
-def addLeadSharingRule(howMany, accessLevel):
-    '''
-    :param howMany:
-    :param accessLevel:
+
+def add_lead_sharing_rule(how_many, access_level):
+    """
+    :param how_many:
+    :param access_level:
     :return:
-    '''
-    while howMany > 0:
-        fullName = "lsl_"+randStrGen(4)
-        label = "lsl-"+randStrGen(5)
-        with open(ruleFile, "a") as f:
+    """
+    while how_many > 0:
+        full_name = "lsl_" + random_string_generator(4)
+        label = "lsl-" + random_string_generator(5)
+        with open(rulefile, "a") as f:
             f.write("""     <sharingOwnerRules>
-                <fullName>""" + fullName +"""</fullName>
-                <accessLevel>"""+ accessLevel +"""</accessLevel>
+                <full_name>""" + full_name + """</full_name>
+                <accessLevel>""" + access_level + """</accessLevel>
                 <label>""" + label + """</label>
                 <sharedTo>
                     <allInternalUsers></allInternalUsers>
@@ -517,83 +547,82 @@ def addLeadSharingRule(howMany, accessLevel):
                 <sharedFrom>
                     <allInternalUsers></allInternalUsers>
                 </sharedFrom>
-            </sharingOwnerRules>"""+"\n")
-            print("Lead sharing rule with label: "+ label +" successfully created.")
-            howMany -= 1
+            </sharingOwnerRules>""" + "\n")
+            print("Lead sharing rule with label: " + label + " successfully created.")
+            how_many -= 1
 
-def closeRules():
-    '''
-    :return:
-    '''
-    with open(ruleFile, "ab") as f:
-        f.write("""</SharingRules>"""+"\n")
 
-def getReportId(reportName, asUser, asPass):
-    '''
-    :param reportName:
-    :param asUser:
-    :param asPass:
+def close_rules():
+    with open(rulefile, "a+") as f:
+        f.write("""</SharingRules>""" + "\n")
+
+
+def get_report_id(report_name, as_user, as_password):
+    """
+    :param report_name:
+    :param as_user:
+    :param as_password:
     :return:
-    '''
-    userSid = getUserSid(asUser, asPass)
-    sf2 = Salesforce(instance_url=instanceURL, session_id=userSid)
-    query = sf2.query("SELECT Id FROM Report WHERE Name = '"+reportName+"'")
-    dict = collections.OrderedDict(query)
-    dictitems = list(dict.values())[2]
-    itemlist = (dictitems.pop())
-    dict2 = collections.OrderedDict(itemlist)
-    reportId = list(dict2.values())[1]
-    if len(dict2) == 0:
-        print("Could not get reportId.\n")
+    """
+    user_sid = get_user_sid(as_user, as_password)
+    sf2 = Salesforce(instance_url=instanceURL, session_id=user_sid)
+    query = sf2.query("SELECT Id FROM Report WHERE Name = '" + report_name + "'")
+    dictitems = list(collections.OrderedDict(query).values())[2]
+    report_id = list(collections.OrderedDict(dictitems.pop()).values())[1]
+    if len(collections.OrderedDict(dictitems.pop())) == 0:
+        print("Could not get report_id.\n")
         return None
     else:
-        return(reportId,userSid)
+        return report_id, user_sid
 
-def exportReport(howMany, reportName, asUser, asPass):
-    '''
-    :param howMany:
-    :param reportName:
-    :param asUser:
-    :param asPass:
+
+def export_report(how_many, report_name, as_user, as_password):
+    """
+    :param how_many:
+    :param report_name:
+    :param as_user:
+    :param as_password:
     :return:
-    '''
-    (reportId,userSid) = getReportId(reportName, asUser, asPass)
-    while howMany>0:
-        response = requests.get(instanceURL+"/"+reportId+"?view=d&snip&export=1&enc=UTF-8&excel=1", headers = sf.headers, cookies = {'sid' : userSid})
-        f = open("lsl-report-"+randStrGen(4)+".csv", 'w')
+    """
+    (report_id, user_sid) = get_report_id(report_name, as_user, as_password)
+    while how_many > 0:
+        response = requests.get(instanceURL + "/" + report_id + "?view=d&snip&export=1&enc=UTF-8&excel=1",
+                                headers=sf.headers, cookies={'sid': user_sid})
+        f = open("lsl-report-" + random_string_generator(4) + ".csv", 'w')
         f.write(response.text)
         f.close()
-        howMany -= 1
+        how_many -= 1
 
-def deployZipFile(asUser, AsPass):
-    '''
-    :param asUser:
-    :param AsPass:
+
+def deploy_zipfile(as_user, as_password):
+    """
+    :param as_user:
+    :param as_password:
     :return:
-    '''
-    UserSid = getUserSid(asUser, AsPass)
-    newZip = zipfile.ZipFile(packageZipFile, "w")
-    dirPath = './tmp'
-    lenDirPath = len(dirPath)
-    for root, _ , files in os.walk(dirPath):
+    """
+    user_sid = get_user_sid(as_user, as_password)
+    new_zip = zipfile.ZipFile(packageZipFile, "w")
+    dir_path = './tmp'
+    len_dir_path = len(dir_path)
+    for root, _, files in os.walk(dir_path):
         for file in files:
-            filePath = os.path.join(root, file)
-            newZip.write(filePath, filePath[lenDirPath :] )
-    newZip.close()
+            file_path = os.path.join(root, file)
+            new_zip.write(file_path, file_path[len_dir_path:])
+    new_zip.close()
     with open(packageZipFile, "rb") as f:
-        bytes = f.read()
-        encoded = base64.b64encode(bytes)
+        bytes_read = f.read()
+        encoded = base64.b64encode(bytes_read)
         b64code = encoded.decode("utf-8")
 
-    deployHeaders = {
+    deploy_headers = {
             'content-type': 'text/xml',
             'charset': 'UTF-8',
             'SOAPAction': 'deploy'
     }
-    deployBody = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
+    deploy_body = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
         <soapenv:Header>
           <met:SessionHeader>
-                <sessionId>""" + UserSid + """</sessionId>
+                <sessionId>""" + user_sid + """</sessionId>
           </met:SessionHeader>
        </soapenv:Header>
        <soapenv:Body>
@@ -613,34 +642,34 @@ def deployZipFile(asUser, AsPass):
        </soapenv:Body>
         </soapenv:Envelope>"""
 
-    soapResult = requests.post(metadataURL, deployBody, headers=deployHeaders)
+    soap_result = requests.post(metadata_url, deploy_body, headers=deploy_headers)
 
-    dom = xml.dom.minidom.parseString(soapResult.text)
-    resultElement = dom.getElementsByTagName('id')
-    resultValue = resultElement[0].firstChild.nodeValue
-    if len(resultValue) == 0:
+    dom = xml.dom.minidom.parseString(soap_result.text)
+    result_element = dom.getElementsByTagName('id')
+    result_value = result_element[0].firstChild.nodeValue
+    if len(result_value) == 0:
         print("I've encountered an issue. Request response:\n")
-        print(soapResult.text+"\n")
+        print(soap_result.text + "\n")
         return None
     else:
-        if resultElement[0].firstChild.nodeValue:
+        if result_element[0].firstChild.nodeValue:
             print("Got deployment ID.")
-            did = resultElement[0].firstChild.nodeValue
+            did = result_element[0].firstChild.nodeValue
         else:
             print("I've encountered an issue. Request response:\n")
-            print(soapResult.text+"\n")
+            print(soap_result.text + "\n")
             return None
     time.sleep(2)
 
-    CheckDeployHeaders = {
+    check_deploy_headers = {
             'content-type': 'text/xml',
             'charset': 'UTF-8',
             'SOAPAction': 'checkDeployStatus'
     }
-    CheckDeployStatus = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
+    check_deploy_status = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
        <soapenv:Header>
           <met:SessionHeader>
-                <sessionId>""" + UserSid + """</sessionId>
+                <sessionId>""" + user_sid + """</sessionId>
           </met:SessionHeader>
        </soapenv:Header>
        <soapenv:Body>
@@ -651,47 +680,48 @@ def deployZipFile(asUser, AsPass):
        </soapenv:Body>
     </soapenv:Envelope>"""
 
-    soapResult = requests.post(metadataURL, CheckDeployStatus, headers=CheckDeployHeaders)
-    dom = xml.dom.minidom.parseString(soapResult.text)
-    resultElement = dom.getElementsByTagName('status')
-    resultValue = resultElement[0].firstChild.nodeValue
-    if len(resultValue) == 0:
+    soap_result = requests.post(metadata_url, check_deploy_status, headers=check_deploy_headers)
+    dom = xml.dom.minidom.parseString(soap_result.text)
+    result_element = dom.getElementsByTagName('status')
+    result_value = result_element[0].firstChild.nodeValue
+    if len(result_value) == 0:
         print("I've encountered an issue. Request response:\n")
-        print(soapResult.text+"\n")
+        print(soap_result.text + "\n")
         return None
     else:
-        if resultElement[0].firstChild.nodeValue == 'Succeeded':
+        if result_element[0].firstChild.nodeValue == 'Succeeded':
             print("Deployment succeeded.")
         else:
             print("I've encountered an issue. Request response:\n")
-            print(soapResult.text+"\n")
+            print(soap_result.text + "\n")
             return None
 
-#UBA Risk User: 10x High, Set Trusted IP range.
-def setTrustedIPRange(count, description, startIP, endIP, owner, passwd):
-    '''
+
+# UBA Risk User: 10x High, Set Trusted IP range.
+def set_trusted_ip_range(count, description, start_ip, end_ip, owner, password):
+    """
     :param count:
     :param description:
-    :param startIP:
-    :param endIP:
+    :param start_ip:
+    :param end_ip:
     :param owner:
-    :param passwd:
+    :param password:
     :return:
-    '''
-    UserSid = getUserSid(owner, passwd)
-    soapBodyPart1 = """
+    """
+    user_sid = get_user_sid(owner, password)
+    soap_body_part1 = """
         <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <env:Header>
                 <urn:SessionHeader xmlns:urn="http://soap.sforce.com/2006/04/metadata">
-                    <urn:sessionId>""" + UserSid + """</urn:sessionId>
+                    <urn:sessionId>""" + user_sid + """</urn:sessionId>
                     </urn:SessionHeader>
             </env:Header>
             <env:Body>
                 <updateMetadata xmlns="http://soap.sforce.com/2006/04/metadata">
                 <metadata xsi:type="SecuritySettings">
                 <fullName>*</fullName>
-			        <networkAccess>"""
-    soapBodyPart2 = """
+                <networkAccess>"""
+    soap_body_part2 = """
                     </networkAccess>
                 </metadata>
                 </updateMetadata>
@@ -699,16 +729,18 @@ def setTrustedIPRange(count, description, startIP, endIP, owner, passwd):
         </env:Envelope>
         """
     while count > 0:
-        ipRange = """
+        ip_range = """
             <ipRanges>
-            <description>"""+ description +"""</description>
-                <start>"""+ startIP +"""</start>
-                <end>"""+ endIP +"""</end>
+            <description>""" + description + """</description>
+                <start>""" + start_ip + """</start>
+                <end>""" + end_ip + """</end>
             </ipRanges>"""
-        requests.post(metadataURL, soapBodyPart1+ipRange+soapBodyPart2, headers=updateMetadataHeader)
-        print("Added trusted IP Range "+str(count)+" time(s).")
-        requests.post(metadataURL, soapBodyPart1+soapBodyPart2, headers=updateMetadataHeader)
-        print("Deleted trusted IP Ranges "+str(count)+" times.")
+        requests.post(metadata_url, soap_body_part1 + ip_range + soap_body_part2, headers=updateMetadataHeader)
+        print("Added trusted IP Range " + str(count) + " time(s).")
+        requests.post(metadata_url, soap_body_part1 + soap_body_part2, headers=updateMetadataHeader)
+        print("Deleted trusted IP Ranges " + str(count) + " times.")
         count -= 1
 
-main()
+
+if __name__ == "__main__":
+    main()

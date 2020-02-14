@@ -8,17 +8,16 @@ import time
 import datetime
 import xml.dom.minidom
 from xml.dom.minidom import parse
-from xml.dom import minidom
 
 # Some globals could be in a settings file
-loginURL = 'https://login.salesforce.com/services/Soap/c/35.0'
-metadataURL = 'https://na24.salesforce.com/services/Soap/m/35.0'
+login_url = 'https://login.salesforce.com/services/Soap/c/35.0'
+metadata_url = 'https://na24.salesforce.com/services/Soap/m/35.0'
 
-## Valid values could be: FifteenMinutes, ThirtyMinutes, SixtyMinutes, TwoHours, FourHours, EightHours, TwelveHours
-NewSessionTimeOut = 'ThirtyMinutes'
-NewLockoutInterval = 'SixtyMinutes'
+# Valid values could be: FifteenMinutes, ThirtyMinutes, SixtyMinutes, TwoHours, FourHours, EightHours, TwelveHours
+new_session_timeout = 'ThirtyMinutes'
+new_lockout_interval = 'SixtyMinutes'
 
-## Check for python version - we need 3
+# Check for python version - we need 3.4
 req_version = (3,4)
 cur_version = sys.version_info
 
@@ -31,26 +30,26 @@ else:
 # just for the cleanup at the end
 os.makedirs('./temp', exist_ok=True)
 
-## Don't want to log in again and again and again so this part is for re-using SID from one login so uncomment for debugging and comment out the login part where mentioned.
-## filename = "sid.txt"
-## mysid = []
-## with open(filename) as f:
-##     for line in f:
-##         mysid.append([str(n) for n in line.strip().split('^^^')])
-## for pair in mysid:
-##     try:
-##         crap,sid = pair[0],pair[1]
-##         print(y)
-##     except IndexError:
-##         print("A line in the file doesn't have enough entries.")
+# Don't want to log in again and again and again so this part is for re-using SID from one login so uncomment for debugging and comment out the login part where mentioned.
+# filename = "sid.txt"
+# mysid = []
+# with open(filename) as f:
+#     for line in f:
+#         mysid.append([str(n) for n in line.strip().split('^^^')])
+# for pair in mysid:
+#     try:
+#         crap, sid = pair[0], pair[1]
+#         print(crap, sid)
+#     except IndexError:
+#         print("A line in the file doesn't have enough entries.")
 
 
-loginHeaders = {
+login_headers = {
     'content-type': 'text/xml',
     'charset': 'UTF-8',
     'SOAPAction': 'login'
 }
-loginBody = """
+login_body = """
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:enterprise.soap.sforce.com">
    <soapenv:Header>
    </soapenv:Header>
@@ -62,23 +61,25 @@ loginBody = """
    </soapenv:Body>
 </soapenv:Envelope>
 """
-loginresult = requests.post(loginURL, loginBody, headers=loginHeaders)
+login_result = requests.post(login_url, login_body, headers=login_headers)
 f = open("./temp/login.xml", 'w')
-f.write(loginresult.text)
+f.write(login_result.text)
 f.close()
 dom = parse("./temp/login.xml")
-sidresult = dom.getElementsByTagName('sessionId')
-## Comment out the line below if using the SID from a backup file.
-sid = sidresult[0].firstChild.nodeValue
+sid_result = dom.getElementsByTagName('sessionId')
 
-print("\nGot session ID.\n\n") # + sid for debugging, we could add checks if sid is successful, etc.
+# Comment out the line below if using the SID from a backup file.
+sid = sid_result[0].firstChild.nodeValue
 
-retrieveHeaders = {
+# + sid for debugging, we could add checks if sid is successful, etc.
+print("\nGot session ID.\n\n")
+
+retrieve_headers = {
     'content-type': 'text/xml',
     'charset': 'UTF-8',
     'SOAPAction': 'retrieve'
     }
-getZipFile = """
+get_zipfile = """
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <soap:Header>
     <SessionHeader xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -103,22 +104,21 @@ getZipFile = """
 """
 
 time.sleep(2)
-retrieveStatusXML = requests.post(metadataURL, getZipFile, headers=retrieveHeaders)
+retrieve_status_xml = requests.post(metadata_url, get_zipfile, headers=retrieve_headers)
 f = open("./temp/getzipresult.xml", 'w')
-f.write(retrieveStatusXML.text)
+f.write(retrieve_status_xml.text)
 f.close()
-from xml.dom.minidom import parse
 dom = parse("./temp/getzipresult.xml")
-retrStatusElement = dom.getElementsByTagName('id')
-retrId = retrStatusElement[0].firstChild.nodeValue
+retr_status_element = dom.getElementsByTagName('id')
+retr_id = retr_status_element[0].firstChild.nodeValue
 
 
-checkRetrieveHeaders = {
+check_retrieve_headers = {
     'content-type': 'text/xml',
     'charset': 'UTF-8',
     'SOAPAction': 'checkRetrieveStatus'
     }
-checkRetrieve = """
+check_retrieve = """
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
    <soapenv:Header>
       <met:SessionHeader>
@@ -127,81 +127,79 @@ checkRetrieve = """
    </soapenv:Header>
    <soapenv:Body>
       <met:checkRetrieveStatus>
-         <met:asyncProcessId>""" + retrId + """</met:asyncProcessId>
+         <met:asyncProcessId>""" + retr_id + """</met:asyncProcessId>
          <met:includeZip>true</met:includeZip>
       </met:checkRetrieveStatus>
    </soapenv:Body>
 </soapenv:Envelope>
 """
 time.sleep(2)
-retrieveResult = requests.post(metadataURL, checkRetrieve, headers=checkRetrieveHeaders)
+retrieve_result = requests.post(metadata_url, check_retrieve, headers=check_retrieve_headers)
 f = open("./temp/getzipfile.xml", 'w')
-f.write(retrieveResult.text)
+f.write(retrieve_result.text)
 f.close()
 xmldoc1 = xml.dom.minidom.parse("./temp/getzipfile.xml")
 xmldata1 = xmldoc1.getElementsByTagName("zipFile")[0]
 try:
     encFile = xmldata1.firstChild.nodeValue
-    print ("\n\nGot ZipFile. ZipFile is in Base64 encoded, decoding.\n\n") # we can add a check if this was successful.
+    print("\n\nGot ZipFile. ZipFile is in Base64 encoded, decoding.\n\n")
     fh = open("./temp/currentPackage.zip", "wb")
     Data = base64.b64decode(encFile)
     fh.write(Data)
     fh.close()
-except:
+except Exception as e:
     print("\n\n**** ERROR: Probably too frequent queries! Stopping, try again! \n")
+    print("Exception was: {}".format(e))
     exit()
 
 zip_ref = zipfile.ZipFile('./temp/currentPackage.zip', 'r')
 zip_ref.extractall()
 zip_ref.close()
 
+
 def change_session_timeout():
-    '''
-    :return:
-    '''
     xmldoc2 = xml.dom.minidom.parse('./unpackaged//settings/Security.settings')
     xmldata2 = xmldoc2.getElementsByTagName("sessionTimeout")[0]
-    xmldata2.firstChild.nodeValue = NewSessionTimeOut
-    f = open('./unpackaged//settings/Security.settings', 'w')
-    f.write(xmldoc2.toxml())
-    f.close()
-    print ("sessionTimeout updated to " + NewSessionTimeOut + " setting locally.")
+    xmldata2.firstChild.nodeValue = new_session_timeout
+    with_file = open('./unpackaged//settings/Security.settings', 'w')
+    with_file.write(xmldoc2.toxml())
+    with_file.close()
+    return "sessionTimeout updated to " + new_session_timeout + " setting locally."
 
-def change_lockoutInterval():
-    '''
-    :return:
-    '''
+
+def change_lockout_interval():
     xmldoc = xml.dom.minidom.parse('./unpackaged//settings/Security.settings')
     xmldata = xmldoc.getElementsByTagName("lockoutInterval")[0]
-    xmldata.firstChild.nodeValue = NewLockoutInterval
-    f = open('./unpackaged//settings/Security.settings', 'w')
-    f.write(xmldoc.toxml())
-    f.close()
-    print ("lockoutInterval updated to " + NewLockoutInterval + " setting locally.")
+    xmldata.firstChild.nodeValue = new_lockout_interval
+    with_file = open('./unpackaged//settings/Security.settings', 'w')
+    with_file.write(xmldoc.toxml())
+    with_file.close()
+    return "lockoutInterval updated to " + new_lockout_interval + " setting locally."
+
 
 change_session_timeout()
-change_lockoutInterval()
+change_lockout_interval()
 
-newzip = zipfile.ZipFile('./temp/updatedPackage.zip', "w")
-for dirname, subdirs, files in os.walk("./unpackaged"):
-    newzip.write(dirname)
-for filename in files:
-    newzip.write(os.path.join(dirname, filename))
-    newzip.write("./unpackaged//package.xml")
-    newzip.close()
+new_zip = zipfile.ZipFile('./temp/updatedPackage.zip', "w")
+for folder_name, subfolders, files in os.walk("./unpackaged"):
+    new_zip.write(folder_name)
+    for filename in files:
+        new_zip.write(os.path.join(folder_name, filename))
+        new_zip.write("./unpackaged//package.xml")
+        new_zip.close()
 
 with open("./temp/updatedPackage.zip", "rb") as f:
-    bytes = f.read()
-    encoded = base64.b64encode(bytes)
+    data = f.read()
+    encoded = base64.b64encode(data)
     converted = encoded.decode("utf-8")
 print("\n\n Base64 new zip file created.\n\n") # We could print the Base64 data for debugging.
 
-deployHeaders = {
+deploy_headers = {
         'content-type': 'text/xml',
         'charset': 'UTF-8',
         'SOAPAction': 'deploy'
     }
-deployBody = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
+deploy_body = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
     <soapenv:Header>
       <met:SessionHeader>
             <sessionId> """ + sid + """</sessionId>
@@ -226,20 +224,20 @@ deployBody = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap
 
 
 time.sleep(2)
-deployIt = requests.post(metadataURL, deployBody, headers=deployHeaders)
+deploy_it = requests.post(metadata_url, deploy_body, headers=deploy_headers)
 f = open("./temp/deploystatus.xml", 'w')
-f.write(deployIt.text)
+f.write(deploy_it.text)
 f.close()
-DeployXML = parse("./temp/deploystatus.xml")
-result = DeployXML.getElementsByTagName('id')
+deploy_xml = parse("./temp/deploystatus.xml")
+result = deploy_xml.getElementsByTagName('id')
 did = result[0].firstChild.nodeValue
 
-CheckDeployHeaders = {
+check_deploy_headers = {
         'content-type': 'text/xml',
         'charset': 'UTF-8',
         'SOAPAction': 'checkDeployStatus'
     }
-CheckDeployStatus = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
+check_deploy_status = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:met="http://soap.sforce.com/2006/04/metadata">
    <soapenv:Header>
       <met:SessionHeader>
             <sessionId> """ + sid + """</sessionId>
@@ -254,31 +252,27 @@ CheckDeployStatus = """<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.o
 </soapenv:Envelope>"""
 
 time.sleep(2)
-checkDeployment = requests.post(metadataURL, CheckDeployStatus, headers=CheckDeployHeaders)
+check_deployment = requests.post(metadata_url, check_deploy_status, headers=check_deploy_headers)
 f = open("./deployresult.xml", 'w')
-f.write(checkDeployment.text)
+f.write(check_deployment.text)
 f.close()
-DResult = parse("./deployresult.xml")
-result = DResult.getElementsByTagName('status')
-goodornot = result[0].firstChild.nodeValue
-print("\n\nDeployment result: " + goodornot)
-if goodornot == 'Succeeded':
-    time.sleep (2)
-    print ("\n\n**** Update successful.\n\n")
+deploy_result = parse("./deployresult.xml")
+result = deploy_result.getElementsByTagName('status')
+print("\n\nDeployment result: " + result[0].firstChild.nodeValue)
+if result[0].firstChild.nodeValue == 'Succeeded':
+    time.sleep(2)
+    print("\n\n**** Update successful.\n\n")
     os.remove("./deployresult.xml")
 else:
-    print("\n\***ERROR: See deployresult.xml for details. Printing error to stdout in 5 seconds;\n\n")
+    print("\n***ERROR: See deployresult.xml for details. Printing error to stdout in 5 seconds;\n\n")
     time.sleep(5)
-    print(checkDeployment.text)
+    print(check_deployment.text)
     print("\n")
     exit()
-
-
-#Cleanup a bit.
 time.sleep(2)
 ts = time.time()
 st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-logtext = """
+log_text = """
 .
 Action logged. Details:
 Session ID: """ + sid + """
@@ -287,8 +281,7 @@ TimeStamp: """ + st + """
 .
 """
 f = open("./log.txt", "a")
-f.write(logtext)
+f.write(log_text)
 f.close()
 shutil.rmtree('./unpackaged')
 shutil.rmtree('./temp')
-
